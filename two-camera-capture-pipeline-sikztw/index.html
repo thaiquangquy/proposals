@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Two-camera capture pipeline proposal</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEzklEQVR42r1XT0wUVxz+5s3swu4inszqKjU2JNCwogYOij3WDRZ78mDccDKpCabyt0l7wQseysEeMMHGyKF682RjTFrE7KmaiCbCrIdVa4JblgVr4mIdmZn35uuB3SmtIKwKv+QlM7/Mm+978+b3ve+nAQBJoWmaV1f3aXNnZ9/38Xj8i+3bt1dHIhFN0/BBQQKvX79mLjc9n04/HB0YGBicmZm5X8LE1atXdQDo6ensM03T4jrHxMQDq7e3qxeAj42urq7uQuElSVJKV7quQyndjzqK75QkWSgU2Nn5TQ8AoKGhYY9pTjokpW0vKKUk13PY9oIiKdNp021ubt6nnzlzZvjIka/iSknquq5jnUMIoXmex2h0q+E4TlQ0Nu5uBUDP89YdvBRFLDY27k4YNTU14SKzjcIvYWk1NZ+EjXA4XNZkpRRI+oQ9z4OmaXif3QuHQzDK+GwQQiAQCK5ATAIAyhUOY63ghhEAAIyNjeHmzZt4+vQPCKGjvr4Ora2tOHCgBQAgpVvedubzM6X6X7ZsXNchST5+/IhtbW0EQE3TGI1GuWXLFv++vb2d+XyeJOm6DpWSlNKlbS/496UhpUuSzOdn+E4Ci+AeHz3KsLa2lgDY0dHBO3fucG5ulvn8DFOpFJPJ4wTA/fv3c25ulkopn3gp3ouAlJKO4zCRSFAIwcuXf15RYgcHBwmAJ06cIOlRSsnx8bs8efJr3rp1y1/Qmgk4jk2SvHHjBgGwu7ubJGnbC3Qc25dYx7H91R49epQVFRUcH79Lkrx27RoBcHh4mCS5sPCmfAKnTp1iRUUF02mTSik6jr2cvNLzPI6O/kYAPH/+PB8+THPv3r2MxWKMx+O8ePEiPc/zyZcIiFXEAk+ePEEsFsPOnTshhFj2DxdCQNM01NXVIRKJIJPJQAiBUCgE13URDAYRCoVA8u2566FylmWhvv4z9Pf34/nz5zh9+jTa29shpfuWYIl31T4A1NbWIpfLYWpqCp7n+fn/P0sSmUwGr169wo4dOwAAhcJLaJqGQqEApdTyhFdbUVtbG2zbxqVLIxBCgKQvx6Xr0hZcuPATqqurMTIyghcv/sKmTdUgiUgksqJUr0hA13UopXDo0CEkEgkMDQ3hypXLCAYrEAgEoesGdN1AIBCEYQRw9uwAUqkUpJRoaWlBVVUVLMsCAKTTJrLZrL+ANSvh6kKUZyqV4rFjx7h582aGQiEmk0na9mIF3b9/j7t27SIA9vX1+WW8ZiFaqxRXVlayqqqKyeRxOo5DpRSlXJw3Pf0nb9/+nc+eTRXz7n8IaPn8DKPRrVBKrniSrXYYHT78JZSSaGpqQmVlJaSU/ufWdWPJe1TRKS/mZ2fzWBOBpcexEPo7LLjn+4N/c/TnlvJLCRhluhi4rrOsIVkqSEtjNbNiWNabsoTmLSH5ACtnWRZENvvMKprSDfOERSxms1lLTE6aowA0IYTaQFOqAGiTk+avaG5u3pdOm+5GNyamOek0NDTs0XO5XN4w9L8PHvz8cDgc0TzPUyQ/+iFVVEAVCAT1+fmCOHfux2+vX7/+i98g9vZ29U5MPFj35tQ0Taunp7Ov1JxqS9vzbdu2NfX3938XjzckYrGP255PT0/Pp9PpsaGhcz9kMk/vlTD/Abi7irSPuMWhAAAAAElFTkSuQmCC">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#E9ECEA;
+    --plate:#F6F7F5;
+    --ink:#1C2529;
+    --ink-2:#4F5B60;
+    --rule:#C9D0CD;
+    --cam-a:#27607A;
+    --cam-b:#6A7A2B;
+    --mark:#E2B007;
+    --mark-soft:#F6E7AE;
+    --fault:#9A3B2E;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:'Archivo', system-ui, sans-serif; font-size:16px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:860px; margin:0 auto; padding:0 24px;}
+  h1,h2,h3{margin:0; font-weight:700; line-height:1.15;}
+  h1{font-size:44px; font-stretch:78%; letter-spacing:-0.01em; max-width:760px;}
+  h2{font-size:28px; font-stretch:82%; margin-bottom:10px;}
+  h3{font-size:17px; margin-bottom:4px;}
+  p{margin:0 0 12px;}
+  .muted{color:var(--ink-2);}
+  .ts{font-family:'JetBrains Mono', monospace; font-size:.86em;}
+  a{color:var(--cam-a);}
+  :focus-visible{outline:3px solid var(--mark); outline-offset:2px;}
+
+  header.top{position:sticky; top:env(safe-area-inset-top, 0px); z-index:10; padding:14px 0; border-bottom:1px solid var(--rule); background:rgba(233,236,234,.94); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);}
+  header.top .wrap{display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; font-size:14px;}
+  header.top nav{display:flex; gap:18px; flex-wrap:wrap;}
+  header.top nav a{color:var(--ink-2); text-decoration:none; padding-bottom:2px; border-bottom:2px solid transparent;}
+  header.top nav a:hover{color:var(--ink);}
+  header.top nav a[aria-current="true"]{color:var(--ink); border-bottom-color:var(--cam-a);}
+  section, .hero{scroll-margin-top:64px;}
+
+  .hero{padding:56px 0 28px;}
+  .hero p.sub{font-size:18px; color:var(--ink-2); max-width:640px; margin-top:18px;}
+
+  /* signature: two synchronized lanes */
+  .lanes{margin:34px 0 8px; background:var(--plate); border:1px solid var(--rule); padding:18px 18px 12px;}
+  .lane-head{display:flex; justify-content:space-between; font-size:13px; color:var(--ink-2); margin-bottom:10px; flex-wrap:wrap; gap:8px;}
+  .lane{display:grid; grid-template-columns:88px 1fr; align-items:center; gap:10px; margin:6px 0;}
+  .lane .name{font-size:13px; font-weight:600;}
+  .lane.a .name{color:var(--cam-a);} .lane.b .name{color:var(--cam-b);}
+  .ticks{position:relative; height:34px; display:grid; grid-template-columns:repeat(14,1fr); gap:4px;}
+  .tick{background:currentColor; border-radius:2px; opacity:.9;}
+  .lane.a .ticks{color:var(--cam-a);} .lane.b .ticks{color:var(--cam-b);}
+  .tick.local{background:transparent; border:2px dashed currentColor; opacity:1;}
+  .axis{display:grid; grid-template-columns:88px 1fr; gap:10px; margin-top:4px;}
+  .axis .t{display:grid; grid-template-columns:repeat(14,1fr); gap:4px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--ink-2);}
+  .axis .t span{text-align:center; overflow:hidden;}
+  .band{grid-column:1/-1; display:grid; grid-template-columns:88px 1fr; gap:10px; margin-top:10px;}
+  .band .bar{display:grid; grid-template-columns:repeat(14,1fr); gap:4px;}
+  .band .out{grid-column:7 / span 5; background:var(--mark-soft); border-left:3px solid var(--mark); font-size:12px; padding:4px 8px;}
+  .legend{display:flex; gap:22px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-2); margin-top:12px;}
+  .legend span{display:inline-flex; align-items:center; gap:4px;}
+  .legend i{display:inline-block; width:12px; height:12px; border-radius:2px;}
+  .legend i.a{background:var(--cam-a);} .legend i.b{background:var(--cam-b); margin-right:4px;}
+  .legend i.l{background:transparent;}
+  .legend i.l.a{border:2px dashed var(--cam-a);} .legend i.l.b{border:2px dashed var(--cam-b);}
+
+  section{padding:44px 0; border-top:1px solid var(--rule);}
+  section > .wrap > p.lede{color:var(--ink-2); max-width:640px; margin-bottom:26px;}
+
+  /* answers */
+  ol.answers{list-style:none; margin:0; padding:0; counter-reset:q;}
+  ol.answers > li{counter-increment:q; display:grid; grid-template-columns:44px 1fr; gap:6px 14px; padding:18px 0; border-top:1px solid var(--rule);}
+  ol.answers > li::before{content:counter(q); font-weight:700; font-stretch:78%; font-size:30px; line-height:1; color:var(--ink-2);}
+  ol.answers h3{font-size:18px; margin-bottom:8px;}
+  ol.answers p{max-width:680px;}
+  ol.answers p.tldr{font-weight:600; font-size:17px; line-height:1.45; color:var(--ink); padding-left:12px; border-left:3px solid var(--cam-a);}
+  ul.plain{margin:6px 0 0; padding-left:18px;} ul.plain li{margin:3px 0;}
+
+  .dia{margin:14px 0 0; border:1px solid var(--rule); background:var(--plate);}
+  .dia-tools{display:flex; gap:6px; align-items:center; padding:6px 8px; border-bottom:1px solid var(--rule); font-size:12px; color:var(--ink-2);}
+  .dia-tools button{font:inherit; min-width:30px; padding:2px 8px; border:1px solid var(--rule); background:#fff; color:var(--ink); cursor:pointer;}
+  .dia-tools span{margin-left:auto;}
+  .dia-view{overflow:hidden; cursor:grab; touch-action:none;}
+  .dia-view.drag{cursor:grabbing;}
+  .dia svg{display:block; width:100%; height:auto;}
+  .dia figcaption{font-size:13px; color:var(--ink-2); padding:10px 12px; border-top:1px solid var(--rule);}
+
+  /* pipeline */
+  .pipe{display:grid; grid-template-columns:1fr 26px 1.25fr 26px 1.25fr 26px 1fr; align-items:stretch; margin:8px 0 24px;}
+  .node{background:var(--plate); border:1px solid var(--rule); padding:12px 12px 10px; font-size:13.5px;}
+  .node b{display:block; font-size:14.5px; margin-bottom:4px;}
+  .node.edge{border-top:4px solid var(--ink);}
+  .arrow{display:flex; align-items:center; justify-content:center; color:var(--ink-2);}
+  .arrow svg{width:22px; height:14px;}
+  pre{background:var(--ink); color:#E6ECE9; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.55; margin:0 0 16px;}
+  pre .c{color:#8FA3A0;}
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+
+  table{width:100%; border-collapse:collapse; font-size:14px; background:var(--plate); border:1px solid var(--rule);}
+  th,td{text-align:left; padding:9px 12px; border-top:1px solid var(--rule); vertical-align:top;}
+  thead th{border-top:none; font-size:13px; color:var(--ink-2); font-weight:600; background:var(--ground);}
+  td.num{white-space:nowrap; text-align:right;}
+  tr.total td{font-weight:700;}
+  .note{font-size:13px; color:var(--ink-2); margin-top:10px;}
+
+  /* calculator */
+  .calc{display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--rule); background:var(--plate); margin-top:26px;}
+  .calc .in{padding:18px; border-right:1px solid var(--rule);}
+  .calc .outp{padding:18px;}
+  .field{display:grid; grid-template-columns:1fr 92px; align-items:center; gap:10px; margin:8px 0; font-size:14px;}
+  .field input{font:inherit; font-family:'JetBrains Mono',monospace; font-size:14px; width:100%; padding:6px 8px; border:1px solid var(--rule); background:#fff; color:var(--ink);}
+  .res{display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-top:1px solid var(--rule); font-size:14px;}
+  .res:first-of-type{border-top:none;}
+  .res b{font-family:'JetBrains Mono',monospace; font-weight:500; text-align:right;}
+  .res.warn b{color:var(--fault);}
+
+  /* failure table */
+  td .ok{color:var(--cam-b); font-weight:600;}
+
+  /* work */
+  .work{background:var(--plate); border:1px solid var(--rule); border-left:4px solid var(--cam-a); padding:20px 22px;}
+  .work .meta{font-size:13.5px; color:var(--ink-2); margin-bottom:12px;}
+  .lessons{margin-top:18px;}
+  .lessons div{display:grid; grid-template-columns:200px 1fr; gap:14px; padding:10px 0; border-top:1px solid var(--rule); font-size:14.5px;}
+  .lessons div b{font-weight:600;}
+
+  /* milestones */
+  .steps{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  .step{border-top:3px solid var(--ink); padding-top:12px;}
+  .step .wk{font-size:13px; color:var(--ink-2);}
+  .step .price{font-weight:700; font-stretch:80%; font-size:24px; margin:4px 0 6px;}
+  .step ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2);}
+  .step li{margin:3px 0;}
+
+  .cta{background:var(--ink); color:var(--ground); padding:48px 0 56px; border-top:none;}
+  .cta h2{color:#fff;}
+  .cta p{color:#B9C4C1; max-width:620px;}
+  .deal{display:flex; flex-wrap:wrap; gap:28px; align-items:baseline; border:1px solid #3A474C; padding:18px 20px; margin:22px 0;}
+  .deal .big{font-size:40px; font-weight:700; font-stretch:78%; color:#fff;}
+  .deal span{color:#B9C4C1; font-size:14px;}
+  .cta ul{color:#B9C4C1; padding-left:18px; margin:0 0 8px;}
+  footer{padding:22px 0 40px; font-size:12.5px; color:var(--ink-2);}
+
+  @media (max-width:640px){
+    h1{font-size:32px;}
+    header.top .who{display:none;}
+    header.top nav{gap:14px; font-size:13.5px;}
+    .pipe{grid-template-columns:1fr;} .arrow{height:26px;} .arrow svg{transform:rotate(90deg);}
+    .two,.calc,.steps{grid-template-columns:minmax(0,1fr);}
+    pre{font-size:11.5px;}
+    .calc .in{border-right:none; border-bottom:1px solid var(--rule);}
+    .lessons div{grid-template-columns:1fr; gap:4px;}
+    .lane,.axis,.band{grid-template-columns:52px 1fr;}
+    .lane .name{font-size:11px;}
+    .axis .t span:nth-child(even){visibility:hidden;}
+    .band .out{grid-column:5 / span 10;}
+    table{font-size:13px;} th,td{padding:8px;}
+    .hide-sm{display:none;}
+  }
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="who">Proposal from <strong>Quy Thai</strong> for the two-camera still-photo prototype</span>
+    <nav aria-label="Sections">
+      <a href="#answers">Your 5 questions</a>
+      <a href="#hardware">Hardware</a>
+      <a href="#work">Past work</a>
+      <a href="#price">Price</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="hero">
+  <div class="wrap">
+    <h1>Both cameras take a photo at the same time, every 7 seconds. No photo is lost when the internet stops.</h1>
+    <p class="sub">A small Linux computer on the site (the edge box) tells both cameras to take a photo at the same time. It saves each photo on its local disk first. Then it sends the photo to cloud storage when the internet is available.</p>
+
+    <div class="lanes" role="img" aria-label="Two camera timelines. Both cameras take a photo at the same 7-second steps. When the internet stops, the capture continues and the photos stay on the local disk. The upload starts again later.">
+      <div class="lane-head"><span>Example: Camera A and B from 14:15:00, one photo every 7 s</span><span class="ts">slot = floor(unix_time / 7)</span></div>
+      <div class="lane a"><span class="name">Camera A</span>
+        <div class="ticks"><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick local"></span><span class="tick local"></span><span class="tick local"></span><span class="tick local"></span><span class="tick local"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span></div>
+      </div>
+      <div class="lane b"><span class="name">Camera B</span>
+        <div class="ticks"><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick local"></span><span class="tick local"></span><span class="tick local"></span><span class="tick local"></span><span class="tick local"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span></div>
+      </div>
+      <div class="axis"><span></span><div class="t">
+        <span>+0s</span><span>+7s</span><span>+14s</span><span>+21s</span><span>+28s</span><span>+35s</span><span>+42s</span><span>+49s</span><span>+56s</span><span>+63s</span><span>+70s</span><span>+77s</span><span>+84s</span><span>+91s</span>
+      </div></div>
+      <div class="band"><span></span><div class="bar"><div class="out">Internet stops. Capture continues. Upload starts again later.</div></div></div>
+      <div class="legend"><span><i class="a"></i><i class="b"></i>In cloud storage, with a database record</span><span><i class="l a"></i><i class="l b"></i>On the local disk, waiting for upload</span></div>
+    </div>
+  </div>
+</div>
+
+<section id="answers">
+  <div class="wrap">
+    <h2>Answers to your five questions</h2>
+    <p class="lede">Each answer starts with the short answer. The sections below give the details.</p>
+    <ol class="answers">
+      <li><div>
+        <h3>What camera hardware would you recommend and why?</h3>
+        <p class="tldr">Use any outdoor PoE camera with approximately 8MP or more and RTSP support.</p>
+        <p>Use an outdoor PoE camera that meets these two requirements:</p>
+        <ul class="plain">
+          <li><b>Resolution.</b> The camera must give high-resolution photos, approximately 8MP (4K) or more. Camera A must have a 180° view. Camera B can also have an optical zoom.</li>
+          <li><b>RTSP support.</b> The edge box uses the RTSP address of the camera (<span class="ts">rtsp://…</span>) to get a photo from the video stream. Almost all IP cameras support RTSP. If the camera also has an HTTP or ONVIF snapshot address, the edge box uses that address first. This address gives the full-quality JPEG photo, and the edge box does not decode video.</li>
+        </ul>
+        <p>Examples that meet both requirements: the <b>Reolink Duo 3 PoE</b> (16MP, dual-lens, 180°) for Camera A and the <b>Reolink RLC-811A</b> (8MP, 5× optical zoom) for Camera B. Both are low cost and outdoor-rated, and both have an HTTP snapshot address.</p>
+        <p>You select the final camera models. Each camera is one address in a configuration file. Thus, you can use any brand that meets the two requirements. The hardware table below shows the cost of these examples.</p>
+      </div></li>
+      <li><div>
+        <h3>How would you keep two cameras synchronized?</h3>
+        <p class="tldr">One scheduler on the edge box triggers both cameras at the same time, and the system pairs the photos by slot number.</p>
+        <p>At each 7-second step, the edge box sends the photo request to both cameras at the same time.</p>
+        <p>Each step has a number, the slot (<span class="ts">slot = floor(unix_time / 7)</span>). The two photos from one step get the same slot number. The system pairs the photos by the slot number. It does not compare timestamps to find pairs.</p>
+        <p>The edge box also keeps the correct time. It gets the time from internet time servers with NTP (Network Time Protocol). The edge box sends this time to the two cameras. Thus, the time that each camera writes on its photo agrees with the database. This also operates when the internet is not available.</p>
+        <p>The edge box also measures the real time between the two captures. For each photo, it records the time when it sent the request and the time when the first byte of the photo came back. The camera took the photo between these two times. For each slot, the system compares the two cameras. If the difference is more than 1 second, the system sends an alert. Usually, the difference is less than 0.5 seconds. I will measure the real value with your hardware in week 1.</p>
+        <p>The edge box does this measurement with its own clock, which has millisecond precision. Many cameras record the photo time only to the full second, so the camera time cannot measure a small difference.</p>
+      </div></li>
+      <li><div>
+        <h3>Would you trigger snapshots from an edge computer or through the cameras themselves?</h3>
+        <p class="tldr">From the edge computer, because one scheduler and one clock make each photo pair exact.</p>
+        <p>If each camera uses its own schedule (FTP upload or SD card timer), each camera uses a different clock. Some cameras also have a minimum interval. Then it is difficult to pair the photos. With the edge box, there is one scheduler, one clock, one log, and one location to change the interval.</p>
+        <p>Risk: if the edge box stops, the capture stops. To decrease this risk, the design uses a hardware watchdog, an automatic start after a power failure, and a heartbeat alert. As an option, each camera can also save a photo to its SD card at a longer interval. Thus, the site keeps some photos if the edge box fails.</p>
+      </div></li>
+      <li><div>
+        <h3>How would you handle several hours of internet outage without losing images?</h3>
+        <p class="tldr">The edge box saves each photo to its local SSD first and uploads it when the internet is available again.</p>
+        <p>The capture does not wait for the network.</p>
+        <p>Each photo stays on the SSD until its upload succeeds. When the internet is available again, the edge box sends the newest photos first, then the older photos. A 6-hour outage needs approximately 14 GB. A 512 GB SSD keeps more than one week of photos. Refer to the edge box diagram in <a href="#design">The system</a>.</p>
+
+      </div></li>
+      <li><div>
+        <h3>What similar camera/IoT systems have you built?</h3>
+        <p class="tldr">I worked on a CCTV platform with Hikvision and ONVIF cameras, camera time sync, camera status and time-range playback.</p>
+        <p>I worked on a Windows CCTV and video management platform. It connects to Hikvision cameras (Hikvision SDK) and ONVIF cameras. It has device time synchronization, online/offline status for each camera, and video playback for a time range. Refer to <a href="#work">Relevant past work</a>. I also have approximately 10 years of experience with embedded C++, IoT data pipelines, and AWS (S3, SQS, Lambda, RDS, PostgreSQL).</p>
+      </div></li>
+    </ol>
+  </div>
+</section>
+
+<section id="design">
+  <div class="wrap">
+    <h2>The system</h2>
+    <p class="lede">Three parts are on the site. Three parts are in the cloud. The design does not use message brokers, containers on the edge box, or AI. Each part has one function.</p>
+
+    <div class="pipe" aria-label="System: cameras, then edge box, then object storage and database, then viewer">
+      <div class="node"><b>2 PoE cameras</b>RTSP stream, plus HTTP snapshot if the camera has it. Time from the edge box.</div>
+      <div class="arrow" aria-hidden="true"><svg viewBox="0 0 22 14"><path d="M0 7h18M13 2l6 5-6 5" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
+      <div class="node edge"><b>Edge box</b>Capture service, SSD storage, SQLite queue, upload process, cleanup job, and chrony (time). systemd starts and monitors all of them.</div>
+      <div class="arrow" aria-hidden="true"><svg viewBox="0 0 22 14"><path d="M0 7h18M13 2l6 5-6 5" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
+      <div class="node"><b>Object storage + Postgres</b>Cloudflare R2 keeps the JPEG photos. Postgres keeps the photo records and the device status.</div>
+      <div class="arrow" aria-hidden="true"><svg viewBox="0 0 22 14"><path d="M0 7h18M13 2l6 5-6 5" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
+      <div class="node"><b>Viewer</b>One page. Select a time range. See the photos from A and B side by side, in time sequence.</div>
+    </div>
+
+    <h3 style="margin:6px 0 8px">Inside the edge box: store first, send later</h3>
+    <figure class="dia" style="margin:0 0 24px">
+      <div class="dia-tools" aria-label="Diagram zoom"><button type="button" data-z="in" aria-label="Zoom in">+</button><button type="button" data-z="out" aria-label="Zoom out">&minus;</button><button type="button" data-z="reset">Reset</button><span>Drag to move</span></div>
+      <div class="dia-view">
+      <svg id="sf-dia" viewBox="0 0 820 280" role="img" aria-label="Store and forward on the edge box. The capture service saves each photo to the SSD and adds a pending row to the SQLite queue. The upload process reads pending rows, newest first, and uploads to R2 and Postgres. When the internet is down, rows stay pending. The cleanup job deletes only photos that are uploaded and older than the retention time.">
+        <defs><marker id="sf-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#4F5B60"/></marker></defs>
+        <g font-family="Archivo, system-ui, sans-serif" font-size="12" fill="#1C2529">
+          <rect x="125" y="8" width="535" height="264" rx="4" fill="none" stroke="#4F5B60" stroke-dasharray="5 4"/>
+          <text x="137" y="26" font-size="11" fill="#4F5B60">Edge box, on site</text>
+
+          <rect x="10" y="120" width="90" height="44" rx="3" fill="#F6F7F5" stroke="#4F5B60"/>
+          <text x="55" y="146" text-anchor="middle" font-weight="600">2 cameras</text>
+
+          <rect x="150" y="120" width="120" height="44" rx="3" fill="#F6F7F5" stroke="#4F5B60"/>
+          <text x="210" y="139" text-anchor="middle" font-weight="600">Capture service</text>
+          <text x="210" y="155" text-anchor="middle" font-size="11" fill="#4F5B60">every 7 s</text>
+
+          <rect x="320" y="36" width="150" height="44" rx="3" fill="#F6F7F5" stroke="#4F5B60"/>
+          <text x="395" y="55" text-anchor="middle" font-weight="600">Photo files on SSD</text>
+          <text x="395" y="71" text-anchor="middle" font-size="11" fill="#4F5B60">temp → fsync → rename</text>
+
+          <rect x="320" y="210" width="150" height="44" rx="3" fill="#F6F7F5" stroke="#27607A" stroke-width="2"/>
+          <text x="395" y="229" text-anchor="middle" font-weight="600">SQLite queue</text>
+          <text x="395" y="245" text-anchor="middle" font-size="11" fill="#4F5B60">pending → uploaded</text>
+
+          <rect x="510" y="120" width="140" height="44" rx="3" fill="#F6F7F5" stroke="#4F5B60"/>
+          <text x="580" y="139" text-anchor="middle" font-weight="600">Upload process</text>
+          <text x="580" y="155" text-anchor="middle" font-size="11" fill="#4F5B60">newest first</text>
+
+          <rect x="510" y="30" width="140" height="56" rx="3" fill="#F6F7F5" stroke="#4F5B60"/>
+          <text x="580" y="49" text-anchor="middle" font-weight="600">Cleanup job</text>
+          <text x="580" y="64" text-anchor="middle" font-size="11" fill="#4F5B60">deletes if uploaded</text>
+          <text x="580" y="78" text-anchor="middle" font-size="11" fill="#4F5B60">and older than 72 h</text>
+
+          <rect x="700" y="120" width="110" height="44" rx="3" fill="#F6F7F5" stroke="#4F5B60"/>
+          <text x="755" y="139" text-anchor="middle" font-weight="600">R2 + Postgres</text>
+          <text x="755" y="155" text-anchor="middle" font-size="11" fill="#4F5B60">cloud</text>
+
+          <g fill="none" stroke="#4F5B60" stroke-width="1.5">
+            <path d="M100 142H148" marker-end="url(#sf-arr)"/>
+            <path d="M270 142H295V58H318" marker-end="url(#sf-arr)"/>
+            <path d="M295 142V232H318" marker-end="url(#sf-arr)"/>
+            <path d="M470 232H580V166" marker-end="url(#sf-arr)"/>
+            <path d="M510 58H472" marker-end="url(#sf-arr)"/>
+            <path d="M650 142H698" marker-end="url(#sf-arr)"/>
+          </g>
+          <text x="124" y="134" text-anchor="middle" font-size="11" fill="#4F5B60">photo</text>
+          <text x="301" y="104" font-size="11" fill="#4F5B60">1. save file</text>
+          <text x="301" y="196" font-size="11" fill="#4F5B60">2. add row</text>
+          <text x="478" y="248" font-size="11" fill="#4F5B60">reads pending</text>
+          <text x="686" y="128" text-anchor="middle" font-size="11" fill="#4F5B60">upload</text>
+          <g stroke="#9A3B2E" stroke-width="2.5"><path d="M674 136L686 148M686 136L674 148"/></g>
+          <text x="755" y="186" text-anchor="middle" font-size="11" fill="#9A3B2E">Internet down:</text>
+          <text x="755" y="200" text-anchor="middle" font-size="11" fill="#9A3B2E">rows stay pending</text>
+        </g>
+      </svg>
+      </div>
+      <figcaption>The capture never waits for the network. Each photo stays on the SSD until its upload succeeds. When the internet is available again, the upload process sends the newest photos first, then the older photos. The cloud file name comes from the camera ID and the slot, so a second upload replaces the same file and there are no duplicates. A 6-hour outage needs approximately 14 GB. A 512 GB SSD keeps more than one week of photos.</figcaption>
+    </figure>
+
+    <div class="two">
+      <div>
+<pre><span class="c">-- one row for each photo; the file is in R2</span>
+CREATE TABLE capture (
+  camera_id     text,
+  slot_ts       timestamptz,  <span class="c">-- same for A and B</span>
+  sent_at       timestamptz,  <span class="c">-- request sent</span>
+  first_byte_at timestamptz,  <span class="c">-- photo starts</span>
+  camera_ts     timestamptz,  <span class="c">-- camera clock</span>
+  object_key    text,
+  bytes         int,
+  sha256        text,
+  upload_status text,
+  PRIMARY KEY (camera_id, slot_ts)
+);</pre>
+      </div>
+      <div>
+<pre><span class="c">-- A and B from 2:15 PM to 2:25 PM</span>
+SELECT slot_ts,
+  max(object_key) FILTER
+    (WHERE camera_id='A') AS a,
+  max(object_key) FILTER
+    (WHERE camera_id='B') AS b
+FROM capture
+WHERE slot_ts BETWEEN
+  '2026-10-12 14:15' AND '2026-10-12 14:25'
+GROUP BY slot_ts ORDER BY slot_ts;</pre>
+      </div>
+    </div>
+    <p class="note">The primary key is also the index for the time-range query. A 10-minute range gives approximately 86 pairs of photos. The viewer opens each photo with a signed URL that is valid for a short time.</p>
+
+    <h3 style="margin-top:26px">Design decisions</h3>
+    <table>
+      <thead><tr><th>Decision</th><th>Reason</th><th class="hide-sm">Disadvantage</th></tr></thead>
+      <tbody>
+        <tr><td>Cloudflare R2</td><td>There is no cost to download photos (no egress fee). The viewer and the future AI jobs read each photo many times.</td><td class="hide-sm">It has fewer lifecycle tools than AWS S3. It uses the same S3 API, so a change to S3 is a configuration change.</td></tr>
+        <tr><td>RTSP as the minimum, HTTP snapshot when available</td><td>RTSP operates with almost all camera brands. An HTTP snapshot does not need video decoding, so the edge box uses it first when it is available.</td><td class="hide-sm">An RTSP capture decodes one video frame with ffmpeg. It uses more CPU, and the photo is a compressed video frame, not a camera JPEG.</td></tr>
+        <tr><td>Python service + SQLite queue</td><td>It is easy to read and change. SQLite in WAL mode keeps its data after a power failure.</td><td class="hide-sm">It is not for hundreds of cameras on one box. It is correct for two to eight cameras.</td></tr>
+        <tr><td>Tailscale for remote access</td><td>I can connect (SSH) to each site without port forwarding and without a public IP address.</td><td class="hide-sm">You must manage one more account. The free plan is sufficient.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="hardware">
+  <div class="wrap">
+    <h2>Hardware, power and size</h2>
+    <p class="lede">You select the models. These examples show only the approximate cost. The prices are approximate US retail prices, and they change frequently.</p>
+    <table>
+      <thead><tr><th>Part</th><th>Low-cost example</th><th class="num">Approx.</th><th class="hide-sm">Stronger example</th><th class="num hide-sm">Approx.</th></tr></thead>
+      <tbody>
+        <tr><td>Camera A, 180°</td><td>Reolink Duo 3 PoE (16MP)</td><td class="num">$200</td><td class="hide-sm">Hikvision 8MP 180° ColorVu panoramic</td><td class="num hide-sm">$400</td></tr>
+        <tr><td>Camera B, zoom</td><td>Reolink RLC-811A (8MP, 5× optical)</td><td class="num">$130</td><td class="hide-sm">Hikvision 8MP motorized varifocal bullet</td><td class="num hide-sm">$300</td></tr>
+        <tr><td>Edge box</td><td>Fanless Intel N100 mini PC, 16 GB RAM, 512 GB SSD</td><td class="num">$180</td><td class="hide-sm">Same</td><td class="num hide-sm">$180</td></tr>
+        <tr><td>Network</td><td>4-port PoE+ switch, outdoor Cat6 cable</td><td class="num">$70</td><td class="hide-sm">Same</td><td class="num hide-sm">$70</td></tr>
+        <tr><td>Backup power</td><td>Small line-interactive UPS</td><td class="num">$70</td><td class="hide-sm">Same</td><td class="num hide-sm">$70</td></tr>
+        <tr class="total"><td>Each 2-camera site</td><td></td><td class="num">≈ $650</td><td class="hide-sm"></td><td class="num hide-sm">≈ $1,020</td></tr>
+      </tbody>
+    </table>
+    <p class="note">Why a mini PC and not a Raspberry Pi: a mini PC has a real SSD and a clock with a battery. Its BIOS starts it again after a power failure. A Raspberry Pi 5 with an NVMe adapter also operates, and it costs approximately $50 less. The total power is approximately 35–45 W, or approximately 1 kWh each day. This value is important for the future solar sites.</p>
+
+    <div class="calc" aria-labelledby="calc-title">
+      <div class="in">
+        <h3 id="calc-title">Size calculator</h3>
+        <p class="muted" style="font-size:13.5px">Change the values for your site. The JPEG size changes with the scene and the quality setting. I will measure the real sizes in week 1.</p>
+        <label class="field">Capture interval (s)<input id="iv" type="number" min="1" step="1" value="7"></label>
+        <label class="field">Active hours each day<input id="hr" type="number" min="1" max="24" step="1" value="24"></label>
+        <label class="field">Camera A photo size (MB)<input id="sa" type="number" min="0.1" step="0.1" value="3.0"></label>
+        <label class="field">Camera B photo size (MB)<input id="sb" type="number" min="0.1" step="0.1" value="1.5"></label>
+        <label class="field">Local retention time (h)<input id="rt" type="number" min="1" step="1" value="72"></label>
+        <label class="field">Site upload speed (Mbps)<input id="up" type="number" min="1" step="1" value="20"></label>
+        <label class="field">Outage duration (h)<input id="og" type="number" min="0" step="1" value="6"></label>
+      </div>
+      <div class="outp" aria-live="polite">
+        <div class="res"><span>Photos each day, both cameras</span><b id="o-img"></b></div>
+        <div class="res"><span>Data each day</span><b id="o-day"></b></div>
+        <div class="res"><span>Local disk for the retention time</span><b id="o-disk"></b></div>
+        <div class="res" id="r-up"><span>Necessary upload speed</span><b id="o-up"></b></div>
+        <div class="res" id="r-cu"><span>Time to upload the outage photos</span><b id="o-cu"></b></div>
+        <div class="res"><span>New cloud data each month</span><b id="o-mo"></b></div>
+        <div class="res"><span>R2 cost for one month of photos</span><b id="o-cost"></b></div>
+        <p class="note">R2 storage costs approximately $0.015 for each GB each month. Downloads are free. Check the current price.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="failures">
+  <div class="wrap">
+    <h2>Failure conditions</h2>
+    <p class="lede">These are also the acceptance tests. I will do each test and record the result in the handover document.</p>
+    <table>
+      <thead><tr><th>Failure</th><th>System response</th></tr></thead>
+      <tbody>
+        <tr><td>Internet failure for many hours</td><td>The capture continues to the SSD. When the internet is available again, the upload starts. It sends the newest photos first, then the older photos. <span class="ok">No photos are lost.</span></td></tr>
+        <tr><td>Power failure</td><td>The BIOS starts the box again. systemd starts all services. SQLite WAL and the safe file-write sequence prevent incomplete photos. The UPS supplies power during short failures.</td></tr>
+        <tr><td>Camera restart or disconnection</td><td>The edge box tries again at longer intervals. The system records each missing slot as a gap, so the timeline shows the gap. The edge box sends a device status record to the cloud.</td></tr>
+        <tr><td>Edge software stops</td><td>The systemd watchdog restarts the service. If the operating system stops, the hardware watchdog restarts the box.</td></tr>
+        <tr><td>Disk full</td><td>The cleanup job deletes uploaded photos first, oldest first. An alert starts at 80% full.</td></tr>
+        <tr><td>Clock error</td><td>chrony keeps the edge box time correct with NTP. The cameras get their time from the edge box. Thus, the time on each photo agrees with the database.</td></tr>
+        <tr><td>Slow camera</td><td>For each slot, the edge box measures the time between the two captures with its own clock. If the time is more than 1 s, the system sends an alert. The usual causes are a slow camera (autofocus, day/night change) or a slow network.</td></tr>
+        <tr><td>No data from the site</td><td>The edge box sends a heartbeat each minute. If a heartbeat does not arrive, you get an email alert.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="work">
+  <div class="wrap">
+    <h2>Relevant past work</h2>
+    <div class="work">
+      <h3>CCTV video management platform (Windows, C#/.NET)</h3>
+      <p class="meta">2023–2024. A team project based on the open-source iSpy software. I merged and released version 1.0.0. The repository is private. I can show it during a call.</p>
+      <ul class="plain">
+        <li>I integrated the Hikvision HCNetSDK: device login, live view, PTZ control, and video search by time range.</li>
+        <li>I added support for ONVIF cameras and a scan for cameras on the local network.</li>
+        <li>I made the time synchronization from the application to the cameras.</li>
+        <li>I added the online/offline status of each camera and kept it the same on all screens.</li>
+        <li>I made a timeline control and a date-time selector for video playback by time range.</li>
+        <li>I moved the local data to SQLite with Dapper and a migration layer. I made the installer with WiX.</li>
+      </ul>
+      <div class="lessons">
+        <div><b>Camera clocks drift</b><span>Thus, in this design, the edge box keeps the time and sends it to both cameras.</span></div>
+        <div><b>Cameras disconnect</b><span>Thus, the system records each missing slot as a gap, and the database keeps the device status.</span></div>
+        <div><b>A vendor SDK causes lock-in</b><span>The Hikvision SDK has many functions, but it operates only on Windows and it is large. This design uses standard RTSP, HTTP and ONVIF on Linux, so it operates with all camera brands.</span></div>
+        <div><b>Time-range queries need the correct key</b><span>Thus, the table key is the camera and the slot time, and the system pairs photos by the slot.</span></div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:14px">Other experience: approximately 10 years of engineering with embedded C++, IoT data pipelines, and cloud platforms on AWS (ECS, SQS, Lambda, RDS, S3) with PostgreSQL. I am a senior full-stack engineer and a team leader.</p>
+  </div>
+</section>
+
+<section id="price">
+  <div class="wrap">
+    <h2>Milestones</h2>
+    <p class="lede">There are three milestones. Each milestone has a fixed price. The time starts when the cameras and the edge box are online and I can connect to them with Tailscale. Before that, I develop and test with a simulated camera, so no time is lost.</p>
+    <div class="steps">
+      <div class="step"><div class="wk">Week 1</div><h3>Capture and local storage</h3><div class="price">$600</div>
+        <ul><li>Confirmed hardware list and wiring guide</li><li>Setup script for the edge box</li><li>Synchronized capture every N seconds</li><li>SSD storage, 24–72 h retention</li><li>Recovery after a power failure or a restart</li></ul></div>
+      <div class="step"><div class="wk">Week 2</div><h3>Cloud upload and records</h3><div class="price">$700</div>
+        <ul><li>Upload queue with outage recovery</li><li>R2 bucket and Postgres schema</li><li>Time-range query API</li><li>Heartbeat and alerts</li><li>Outage test with the cable disconnected</li></ul></div>
+      <div class="step"><div class="wk">Week 3</div><h3>Viewer and handover</h3><div class="price">$500</div>
+        <ul><li>Side-by-side viewer in time sequence</li><li>72-hour test with a report</li><li>Setup and replication guide</li><li>Screen recording of the system</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap">
+    <h2>Phase 1, fixed price</h2>
+    <div class="deal"><span class="big">$1,800</span><span>3 milestones, 3 weeks after the hardware is online. The hardware, the cloud account and the Tailscale account are in your name.</span></div>
+    <p>Not included: purchase and installation of the hardware on the site, and all AI, video or customer-facing work. I will send a one-page wiring guide for the person who installs the cameras. I am in Vietnam (UTC+7). I work when your site is quiet, and I send a written update at the end of each work session.</p>
+    <p>If this plan is correct for you, send me a message on Upwork. Before we start, we can have a 20-minute call to confirm the site layout and the internet connection.</p>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap">Prepared by Quy Thai for this job post. The prices and hardware models are estimates. Confirm them before you order.</div></footer>
+
+<script>
+(function(){
+  var ids=['iv','hr','sa','sb','rt','up','og'];
+  function v(id){var n=parseFloat(document.getElementById(id).value);return isFinite(n)&&n>0?n:0;}
+  function gb(mb){return mb/1000;}
+  function fmt(n,d){return n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});}
+  function run(){
+    var iv=v('iv')||7, hr=Math.min(v('hr')||24,24), sa=v('sa'), sb=v('sb'), rt=v('rt'), up=v('up'), og=parseFloat(document.getElementById('og').value)||0;
+    var slotsDay=hr*3600/iv;
+    var perSlot=sa+sb;
+    var mbDay=slotsDay*perSlot;
+    var disk=perSlot*(rt*3600/iv)*(hr/24); // images captured within rt clock hours
+    var mbps=perSlot*8/iv; // sustained while active
+    document.getElementById('o-img').textContent=fmt(slotsDay*2,0);
+    document.getElementById('o-day').textContent=fmt(gb(mbDay),1)+' GB';
+    document.getElementById('o-disk').textContent=fmt(gb(disk),0)+' GB';
+    document.getElementById('o-up').textContent=fmt(mbps,1)+' Mbps';
+    document.getElementById('r-up').className='res'+(mbps>up?' warn':'');
+    var cu=document.getElementById('o-cu'), rc=document.getElementById('r-cu');
+    if(up<=mbps){cu.textContent='not possible, upload speed too low';rc.className='res warn';}
+    else{var h=og*mbps/(up-mbps);cu.textContent=h<1?fmt(h*60,0)+' min':fmt(h,1)+' h';rc.className='res';}
+    var moGB=gb(mbDay)*30;
+    document.getElementById('o-mo').textContent=moGB>=1000?fmt(moGB/1000,2)+' TB':fmt(moGB,0)+' GB';
+    document.getElementById('o-cost').textContent='$'+fmt(moGB*0.015,0)+' / month';
+  }
+  ids.forEach(function(id){document.getElementById(id).addEventListener('input',run);});
+  run();
+})();
+
+(function(){
+  var svg=document.getElementById('sf-dia'); if(!svg) return;
+  var view=svg.parentNode, base=[0,0,820,280], vb=base.slice();
+  function set(){svg.setAttribute('viewBox',vb.join(' '));}
+  function zoom(f){var cx=vb[0]+vb[2]/2, cy=vb[1]+vb[3]/2; vb[2]=Math.min(base[2]*2,Math.max(base[2]/4,vb[2]*f)); vb[3]=vb[2]*base[3]/base[2]; vb[0]=cx-vb[2]/2; vb[1]=cy-vb[3]/2; set();}
+  document.querySelectorAll('.dia-tools button').forEach(function(b){b.addEventListener('click',function(){var z=b.getAttribute('data-z'); if(z==='in')zoom(0.8); else if(z==='out')zoom(1.25); else {vb=base.slice(); set();}});});
+  var start=null;
+  view.addEventListener('pointerdown',function(e){start={x:e.clientX,y:e.clientY,vx:vb[0],vy:vb[1]}; view.classList.add('drag'); try{view.setPointerCapture(e.pointerId);}catch(_){}});
+  view.addEventListener('pointermove',function(e){if(!start)return; var k=vb[2]/view.clientWidth; vb[0]=start.vx-(e.clientX-start.x)*k; vb[1]=start.vy-(e.clientY-start.y)*k; set();});
+  function end(){start=null; view.classList.remove('drag');}
+  view.addEventListener('pointerup',end); view.addEventListener('pointercancel',end);
+})();
+
+(function(){
+  var links=[].slice.call(document.querySelectorAll('header.top nav a'));
+  var secs=[].slice.call(document.querySelectorAll('main > section[id], main > div.hero'));
+  var byId={}; links.forEach(function(a){byId[a.getAttribute('href').slice(1)]=a;});
+  var ticking=false;
+  function update(){
+    ticking=false;
+    var line=window.innerHeight*0.35, cur=null;
+    secs.forEach(function(sec){ if(sec.getBoundingClientRect().top<=line) cur=sec; });
+    var link=cur&&cur.id?byId[cur.id]:null;
+    if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-2) link=links[links.length-1];
+    links.forEach(function(l){ if(l===link) l.setAttribute('aria-current','true'); else l.removeAttribute('aria-current'); });
+  }
+  window.addEventListener('scroll',function(){ if(!ticking){ticking=true; requestAnimationFrame(update);} },{passive:true});
+  update();
+})();
+</script>
+</body>
+</html>
